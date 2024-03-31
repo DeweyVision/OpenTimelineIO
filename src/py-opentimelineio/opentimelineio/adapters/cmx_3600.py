@@ -793,9 +793,16 @@ def read_from_string(input_str, rate=24, ignore_timecode_mismatch=False):
     return result
 
 
-def write_to_string(input_otio, rate=None, style='avid', reelname_len=8):
+def write_to_string(
+    input_otio,
+    rate=None,
+    style='avid',
+    reelname_len=8,
+    force_disable_sources_dropframe=False
+):
     # TODO: We should have convenience functions in Timeline for this?
     # also only works for a single video track at the moment
+    print(f"Invoked cmx_3600 write_to_string with arguments: {input_otio}, {rate}, {style}, {reelname_len}, {force_disable_sources_dropframe}")
 
     video_tracks = [t for t in input_otio.tracks
                     if t.kind == schema.TrackKind.Video and t.enabled]
@@ -826,18 +833,20 @@ def write_to_string(input_otio, rate=None, style='avid', reelname_len=8):
         # Assume all rates are the same as the 1st track's
         rate=rate or input_otio.tracks[0].duration().rate,
         style=style,
-        reelname_len=reelname_len
+        reelname_len=reelname_len,
+        force_disable_sources_dropframe=force_disable_sources_dropframe
     )
 
     return writer.get_content_for_track_at_index(0, title=input_otio.name)
 
 
 class EDLWriter:
-    def __init__(self, tracks, rate, style, reelname_len=8):
+    def __init__(self, tracks, rate, style, reelname_len=8, force_disable_sources_dropframe=False):
         self._tracks = tracks
         self._rate = rate
         self._style = style
         self._reelname_len = reelname_len
+        self._force_disable_sources_dropframe = force_disable_sources_dropframe
 
         if style not in VALID_EDL_STYLES:
             raise exceptions.NotSupportedError(
@@ -908,7 +917,8 @@ class EDLWriter:
                         track.kind,
                         self._rate,
                         self._style,
-                        self._reelname_len
+                        self._reelname_len,
+                        self._force_disable_sources_dropframe,
                     )
                 )
             elif isinstance(child, schema.Clip):
@@ -920,7 +930,8 @@ class EDLWriter:
                             track.kind,
                             self._rate,
                             self._style,
-                            self._reelname_len
+                            self._reelname_len,
+                            self._force_disable_sources_dropframe,
                         )
                     )
                 else:
@@ -977,7 +988,8 @@ class Event:
         kind,
         rate,
         style,
-        reelname_len
+        reelname_len,
+        force_disable_sources_dropframe
     ):
 
         # Premiere style uses AX for the reel name
@@ -986,7 +998,7 @@ class Event:
         else:
             reel = _reel_from_clip(clip, reelname_len)
 
-        line = EventLine(kind, rate, reel=reel)
+        line = EventLine(kind, rate, reel=reel, force_disable_sources_dropframe=force_disable_sources_dropframe)
         line.source_in = clip.source_range.start_time
         line.source_out = clip.source_range.end_time_exclusive()
 
@@ -1055,12 +1067,13 @@ class DissolveEvent:
         kind,
         rate,
         style,
-        reelname_len
+        reelname_len,
+        force_disable_sources_dropframe,
     ):
         # Note: We don't make the A-Side event line here as it is represented
         # by its own event (edit number).
 
-        cut_line = EventLine(kind, rate)
+        cut_line = EventLine(kind, rate, force_disable_sources_dropframe=force_disable_sources_dropframe)
 
         if a_side_event:
             cut_line.reel = a_side_event.reel
@@ -1088,7 +1101,8 @@ class DissolveEvent:
         dslve_line = EventLine(
             kind,
             rate,
-            reel=_reel_from_clip(b_side_clip, reelname_len)
+            reel=_reel_from_clip(b_side_clip, reelname_len),
+            force_disable_sources_dropframe=force_disable_sources_dropframe,
         )
         dslve_line.source_in = b_side_clip.source_range.start_time
         dslve_line.source_out = b_side_clip.source_range.end_time_exclusive()
@@ -1164,7 +1178,7 @@ class DissolveEvent:
 
 
 class EventLine:
-    def __init__(self, kind, rate, reel='AX'):
+    def __init__(self, kind, rate, reel='AX', force_disable_sources_dropframe=False):
         self.reel = reel
         self._kind = 'V' if kind == schema.TrackKind.Video else 'A'
         self._rate = rate
@@ -1176,13 +1190,15 @@ class EventLine:
 
         self.dissolve_length = opentime.RationalTime(0.0, rate)
 
+        self.force_disable_sources_dropframe = force_disable_sources_dropframe
+
     def to_edl_format(self, edit_number):
         ser = {
             'edit': edit_number,
             'reel': self.reel,
             'kind': self._kind,
-            'src_in': opentime.to_timecode(self.source_in, self._rate),
-            'src_out': opentime.to_timecode(self.source_out, self._rate),
+            'src_in': self._to_timecode_handle_dropframe(self.source_in),
+            'src_out': self._to_timecode_handle_dropframe(self.source_out),
             'rec_in': opentime.to_timecode(self.record_in, self._rate),
             'rec_out': opentime.to_timecode(self.record_out, self._rate),
             'diss': int(
@@ -1199,6 +1215,11 @@ class EventLine:
 
     def is_dissolve(self):
         return self.dissolve_length.value > 0
+
+    def _to_timecode_handle_dropframe(self, rt):
+        if self.force_disable_sources_dropframe:
+            return opentime.to_timecode(rt, self._rate, drop_frame=0)
+        return opentime.to_timecode(rt, self._rate)
 
 
 def _generate_comment_lines(
