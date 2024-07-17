@@ -37,6 +37,7 @@ class ForceDropFrameTimeCodeWriter(ITimeCodeWriter):
         self.rate = rate
 
     def write_timecode(self, rationalTime: opentime.RationalTime):
+        print(f"ForceDropFrameTimeCodeWriter: writing {rationalTime} into timecode given rate {self.rate}")
         return opentime.to_timecode(rationalTime, self.rate, drop_frame=0)
 
 class InferredDropFrameTimeCodeWriter(ITimeCodeWriter):
@@ -44,6 +45,7 @@ class InferredDropFrameTimeCodeWriter(ITimeCodeWriter):
         self.rate = rate
 
     def write_timecode(self, rationalTime: opentime.RationalTime):
+        print(f"InferredDropFrameTimeCodeWriter: writing {rationalTime} into timecode given rate {self.rate}")
         return opentime.to_timecode(rationalTime, self.rate)
 
 class TimeCodeWriterFactory:
@@ -657,6 +659,7 @@ class ClipHandler:
             'record_tc_out'
         ]:
             if ':' not in getattr(self, prop):
+                old_attr = getattr(self, prop)
                 setattr(
                     self,
                     prop,
@@ -668,6 +671,7 @@ class ClipHandler:
                         self.edl_rate
                     )
                 )
+                print(f"Converted non TC prop {old_attr} to {getattr(self, prop)} based on rate {self.edl_rate}")
 
     def make_transition(self, comment_data):
         # Do some sanity check
@@ -1234,6 +1238,8 @@ class EventLine:
         force_disable_sources_dropframe=False,
         force_disable_target_dropframe=False,
     ):
+        print(f"Creating OTIO Event line using parameters: {kind}, {rate}, {reel}, {force_disable_sources_dropframe}, {force_disable_target_dropframe}")
+
         self.reel = reel
         self._kind = 'V' if kind == schema.TrackKind.Video else 'A'
         self._rate = rate
@@ -1312,14 +1318,17 @@ def _generate_comment_lines(
         )
 
     if timing_effect and isinstance(timing_effect, schema.LinearTimeWarp):
+        line_tc_result = opentime.to_timecode(
+            clip.trimmed_range().start_time,
+            edl_rate
+        )
+
+        print(f"Created timecode {line_tc_result} using {clip.trimmed_range().start_time} and {edl_rate}")
         lines.append(
             'M2   {}\t\t{}\t\t\t{}'.format(
                 clip.name,
                 timing_effect.time_scalar * edl_rate,
-                opentime.to_timecode(
-                    clip.trimmed_range().start_time,
-                    edl_rate
-                )
+                line_tc_result,
             )
         )
 
@@ -1388,6 +1397,7 @@ def _generate_comment_lines(
             marker.marked_range.start_time,
             edl_rate
         )
+        print(f"Created marker timecode {timecode} using {marker.marked_range.start_time} and {edl_rate}")
 
         color = marker.color
         meta = marker.metadata.get("cmx_3600")
