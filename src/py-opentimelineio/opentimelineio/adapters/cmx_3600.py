@@ -49,11 +49,13 @@ class InferredDropFrameTimeCodeWriter(ITimeCodeWriter):
         return opentime.to_timecode(rationalTime, self.rate)
 
 class TimeCodeWriterFactory:
-    @staticmethod
-    def create_timecode_provider(rate, force_disable_dropframe: bool = False) -> ITimeCodeWriter:
+    def __init__(self, rate):
+        self.rate = rate
+
+    def create_timecode_provider(self, force_disable_dropframe: bool = False) -> ITimeCodeWriter:
         if force_disable_dropframe:
-            return ForceDropFrameTimeCodeWriter(rate)
-        return InferredDropFrameTimeCodeWriter(rate)
+            return ForceDropFrameTimeCodeWriter(self.rate)
+        return InferredDropFrameTimeCodeWriter(self.rate)
 
 #############################################################################################
 
@@ -1041,6 +1043,11 @@ class Event:
         force_disable_sources_dropframe,
         force_disable_target_dropframe,
     ):
+        print(
+            "Creating Event with arguments: " +
+            f"{clip}, {tracks}, {kind}, {rate}, {style}, {reelname_len}, " +
+            f"{force_disable_sources_dropframe}, {force_disable_target_dropframe}"
+        )
 
         # Premiere style uses AX for the reel name
         if style == 'premiere':
@@ -1048,7 +1055,12 @@ class Event:
         else:
             reel = _reel_from_clip(clip, reelname_len)
 
-        line = EventLine(kind, rate, reel=reel, force_disable_sources_dropframe=force_disable_sources_dropframe)
+        line = EventLine(
+            kind, rate, reel=reel,
+            force_disable_sources_dropframe=force_disable_sources_dropframe,
+            force_disable_target_dropframe=force_disable_target_dropframe
+        )
+
         line.source_in = clip.source_range.start_time
         line.source_out = clip.source_range.end_time_exclusive()
 
@@ -1238,7 +1250,12 @@ class EventLine:
         force_disable_sources_dropframe=False,
         force_disable_target_dropframe=False,
     ):
-        print(f"Creating OTIO Event line using parameters: {kind}, {rate}, {reel}, {force_disable_sources_dropframe}, {force_disable_target_dropframe}")
+        print(
+            "Creating OTIO Event line using parameters: " +
+            f"{kind}, {rate}, {reel}, " +
+            f"{force_disable_sources_dropframe}, " +
+            f"{force_disable_target_dropframe}"
+        )
 
         self.reel = reel
         self._kind = 'V' if kind == schema.TrackKind.Video else 'A'
@@ -1251,8 +1268,9 @@ class EventLine:
 
         self.dissolve_length = opentime.RationalTime(0.0, rate)
 
-        self.source_timecode_provider = TimeCodeWriterFactory.create_timecode_provider(rate, force_disable_sources_dropframe)
-        self.target_timecode_provider = TimeCodeWriterFactory.create_timecode_provider(rate, force_disable_target_dropframe)
+        timecode_writer_factory = TimeCodeWriterFactory(rate)
+        self.source_timecode_provider = timecode_writer_factory.create_timecode_provider(force_disable_sources_dropframe)
+        self.target_timecode_provider = timecode_writer_factory.create_timecode_provider(force_disable_target_dropframe)
 
     def to_edl_format(self, edit_number):
         ser = {
