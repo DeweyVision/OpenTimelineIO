@@ -1058,7 +1058,7 @@ class Event:
         line = EventLine(
             kind, rate, reel=reel,
             force_disable_sources_dropframe=force_disable_sources_dropframe,
-            force_disable_target_dropframe=force_disable_target_dropframe
+            force_disable_target_dropframe=force_disable_target_dropframe,
         )
 
         line.source_in = clip.source_range.start_time
