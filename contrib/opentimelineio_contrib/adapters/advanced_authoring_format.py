@@ -9,6 +9,7 @@ Depending on if/where PyAAF is installed, you may need to set this env var:
 import colorsys
 import copy
 import numbers
+import io
 import os
 import sys
 
@@ -1620,3 +1621,35 @@ def write_to_file(input_otio, filepath, **kwargs):
                 result = transcriber.transcribe(otio_child)
                 if result:
                     transcriber.sequence.components.append(result)
+
+def write_to_string(input_otio, **kwargs):
+
+    string_output = ""
+    write_buffer = io.BytesIO
+    with aaf2.open(write_buffer, "w") as f:
+
+        timeline = aaf_writer._stackify_nested_groups(input_otio)
+
+        aaf_writer.validate_metadata(timeline)
+
+        otio2aaf = aaf_writer.AAFFileTranscriber(timeline, f, **kwargs)
+
+        if not isinstance(timeline, otio.schema.Timeline):
+            raise otio.exceptions.NotSupportedError(
+                "Currently only supporting top level Timeline")
+
+        for otio_track in timeline.tracks:
+            # Ensure track must have clip to get the edit_rate
+            if len(otio_track) == 0:
+                continue
+
+            transcriber = otio2aaf.track_transcriber(otio_track)
+
+            for otio_child in otio_track:
+                result = transcriber.transcribe(otio_child)
+                if result:
+                    transcriber.sequence.components.append(result)
+
+        string_output = write_buffer.read()
+
+    return string_output
