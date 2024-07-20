@@ -1625,7 +1625,7 @@ def write_to_file(input_otio, filepath, **kwargs):
 def write_to_string(input_otio, **kwargs):
 
     string_output = ""
-    write_buffer = io.BytesIO
+    write_buffer = io.StringIO()
     with aaf2.open(write_buffer, "w") as f:
 
         timeline = aaf_writer._stackify_nested_groups(input_otio)
@@ -1650,6 +1650,7 @@ def write_to_string(input_otio, **kwargs):
                 if result:
                     transcriber.sequence.components.append(result)
 
+        write_buffer.seek(0)
         string_output = write_buffer.read()
 
     return string_output
