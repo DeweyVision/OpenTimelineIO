@@ -1625,7 +1625,7 @@ def write_to_file(input_otio, filepath, **kwargs):
 def write_to_string(input_otio, **kwargs):
 
     string_output = ""
-    write_buffer = io.StringIO()
+    write_buffer = io.BytesIO()
     with aaf2.open(write_buffer, "w") as f:
 
         timeline = aaf_writer._stackify_nested_groups(input_otio)
