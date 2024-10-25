@@ -37,7 +37,6 @@ class ForceDropFrameTimeCodeWriter(ITimeCodeWriter):
         self.rate = rate
 
     def write_timecode(self, rationalTime: opentime.RationalTime):
-        # print(f"ForceDropFrameTimeCodeWriter: writing {rationalTime} into timecode given rate {self.rate}")
         return opentime.to_timecode(rationalTime, self.rate, drop_frame=0)
 
 class InferredDropFrameTimeCodeWriter(ITimeCodeWriter):
@@ -45,7 +44,6 @@ class InferredDropFrameTimeCodeWriter(ITimeCodeWriter):
         self.rate = rate
 
     def write_timecode(self, rationalTime: opentime.RationalTime):
-        # print(f"InferredDropFrameTimeCodeWriter: writing {rationalTime} into timecode given rate {self.rate}")
         return opentime.to_timecode(rationalTime, self.rate)
 
 class TimeCodeWriterFactory:
@@ -212,7 +210,6 @@ class EDLParser:
 
         # Add clip instances to the tracks
         tracks = self.tracks_for_channel(clip_handler.channel_code)
-        print("Scanning through tracks: ", tracks)
         for track in tracks:
             track_transition = transition
             if len(tracks) > 1:
@@ -280,7 +277,6 @@ class EDLParser:
             track_names = [channel_code]
 
         # Create any channels we don't already have
-        print("Scanning through track names: ", track_names)
         for track_name in track_names:
             if track_name not in self.tracks_by_name:
                 track = schema.Track(
@@ -291,7 +287,6 @@ class EDLParser:
                 self.timeline.tracks.append(track)
 
         # Return a list of actual tracks
-        print("Comprehending through track names: ", track_names)
         return [self.tracks_by_name[c] for c in track_names]
 
     def parse_edl(self, edl_string, rate=24):
@@ -302,7 +297,6 @@ class EDLParser:
         # precedes the clip
 
         # remove all blank lines from the edl
-        print("Comprehending through line, through splitlines")
         edl_lines = [
             line for line in
             (line.strip() for line in edl_string.splitlines()) if line
@@ -398,7 +392,6 @@ class EDLParser:
             else:
                 raise EDLParseError('Unknown event type')
 
-        print("Scanning through tracks: ", self.timeline.tracks)
         for track in self.timeline.tracks:
             # if the source_range is the same as the available_range
             # then we don't need to set it at all.
@@ -530,7 +523,6 @@ class ClipHandler:
                     asc_sop
                 )
                 if m:
-                    print("Scanning through m.groups()")
                     floats = [float(g) for g in m.groups()]
                     slope = [floats[0], floats[1], floats[2]]
                     offset = [floats[3], floats[4], floats[5]]
@@ -564,7 +556,6 @@ class ClipHandler:
             # variations of EDL, so if we are lenient then maybe we
             # can handle more of them? Only real-world testing will
             # determine this for sure...
-            print("Scanning through locators: ")
             for locator in comment_data['locators']:
                 m = re.match(
                     r'(\d\d:\d\d:\d\d:\d\d)\s+(\w*)(\s+|$)(.*)',
@@ -613,7 +604,6 @@ class ClipHandler:
         return clip
 
     def parse(self, line):
-        print("Comprehending through split lines.")
         fields = tuple(e.strip() for e in line.split() if e.strip())
         field_count = len(fields)
 
@@ -681,7 +671,6 @@ class ClipHandler:
                         self.edl_rate
                     )
                 )
-                # print(f"Converted non TC prop {old_attr} to {getattr(self, prop)} based on rate {self.edl_rate}")
 
     def make_transition(self, comment_data):
         # Do some sanity check
@@ -777,12 +766,10 @@ class CommentHandler:
     def __init__(self, comments):
         self.handled = {}
         self.unhandled = []
-        print("Scanning through coments.")
         for comment in comments:
             self.parse(comment)
 
     def parse(self, comment):
-        print("Scannign through comment ID and type.")
         for comment_id, comment_type in self.comment_id_map.items():
             regex = self.regex_template.format(id=comment_id)
             match = re.match(regex, comment)
@@ -852,17 +839,18 @@ def write_to_string(
     # also only works for a single video track at the moment
     print(
         "Invoked cmx_3600 write_to_string with arguments: " +
-        f"{input_otio}, {rate}, {style}, {reelname_len}, " +
+        f"{rate}, {style}, {reelname_len}, " +
         f"{force_disable_sources_dropframe}, " +
         f"{force_disable_target_dropframe}"
     )
 
-    print("Comprehending video tracks")
-    video_tracks = [t for t in input_otio.tracks
-                    if t.kind == schema.TrackKind.Video and t.enabled]
-    print("Comprehending audio tracks")
-    audio_tracks = [t for t in input_otio.tracks
-                    if t.kind == schema.TrackKind.Audio and t.enabled]
+    video_tracks = []
+    audio_tracks = []
+    for track in input_otio.tracks:
+        if track.kind == schema.TrackKind.Video and track.enabled:
+            video_tracks.append(track)
+        elif track.kind == schema.TrackKind.Audio and track.enabled:
+            audio_tracks.append(track)
 
     if len(video_tracks) != 1:
         raise exceptions.NotSupportedError(
@@ -939,8 +927,7 @@ class EDLWriter:
         #            |---0.0 Trans 100.0----|
         # |Clip1 45.0|----------------Clip2 200.0-----------------|Clip3 24.0|
 
-        # Adjust cut points to match EDL event representation.
-        print("Scanning clips in track.")
+        # Adjust cut points to match EDL event representation.=
         for idx, child in enumerate(track):
             if isinstance(child, schema.Transition):
                 if idx != 0:
@@ -962,7 +949,6 @@ class EDLWriter:
         # Group events into either simple clip/a-side or transition and b-side
         # to match EDL edit/event representation and edit numbers.
         events = []
-        print("Scanning clips in track")
         for idx, child in enumerate(track):
             if isinstance(child, schema.Transition):
                 # Transition will be captured in subsequent iteration.
@@ -1009,7 +995,6 @@ class EDLWriter:
         content = f"TITLE: {title}\n\n" if title else ''
         if track.enabled:
             # Convert each event/dissolve-event into plain text.
-            print("Scanning track events.")
             for idx, event in enumerate(events):
                 event.edit_number = idx + 1
                 content += event.to_edl_format() + '\n'
@@ -1018,7 +1003,6 @@ class EDLWriter:
 
 
 def _supported_timing_effects(clip):
-    print("Comprehending clip effects")
     return [
         fx for fx in clip.effects
         if isinstance(fx, schema.LinearTimeWarp)
@@ -1030,7 +1014,6 @@ def _relevant_timing_effect(clip):
     effects = _supported_timing_effects(clip)
 
     if effects != clip.effects:
-        print("Scanning clip effect things")
         for thing in clip.effects:
             if thing not in effects and isinstance(thing, schema.TimeEffect):
                 raise exceptions.NotSupportedError(
@@ -1060,11 +1043,6 @@ class Event:
         force_disable_sources_dropframe,
         force_disable_target_dropframe,
     ):
-        # print(
-        #     "Creating Event with arguments: " +
-        #     f"{clip}, {tracks}, {kind}, {rate}, {style}, {reelname_len}, " +
-        #     f"{force_disable_sources_dropframe}, {force_disable_target_dropframe}"
-        # )
 
         # Premiere style uses AX for the reel name
         if style == 'premiere':
@@ -1267,12 +1245,6 @@ class EventLine:
         force_disable_sources_dropframe=False,
         force_disable_target_dropframe=False,
     ):
-        # print(
-        #     "Creating OTIO Event line using parameters: " +
-        #     f"{kind}, {rate}, {reel}, " +
-        #     f"{force_disable_sources_dropframe}, " +
-        #     f"{force_disable_target_dropframe}"
-        # )
 
         self.reel = reel
         self._kind = 'V' if kind == schema.TrackKind.Video else 'A'
@@ -1358,7 +1330,6 @@ def _generate_comment_lines(
             edl_rate
         )
 
-        # print(f"Created timecode {line_tc_result} using {clip.trimmed_range().start_time} and {edl_rate}")
         lines.append(
             'M2   {}\t\t{}\t\t\t{}'.format(
                 clip.name,
@@ -1427,13 +1398,11 @@ def _generate_comment_lines(
             ))
 
     # Output any markers on this clip
-    print("Scanning clip markers.")
     for marker in clip.markers:
         timecode = opentime.to_timecode(
             marker.marked_range.start_time,
             edl_rate
         )
-        # print(f"Created marker timecode {timecode} using {marker.marked_range.start_time} and {edl_rate}")
 
         color = marker.color
         meta = marker.metadata.get("cmx_3600")
@@ -1445,7 +1414,6 @@ def _generate_comment_lines(
     # If we are carrying any unhandled CMX 3600 comments on this clip
     # then output them blindly.
     extra_comments = clip.metadata.get('cmx_3600', {}).get('comments', [])
-    print("Scanning extra comments.")
     for comment in extra_comments:
         lines.append(f"* {comment}")
 
