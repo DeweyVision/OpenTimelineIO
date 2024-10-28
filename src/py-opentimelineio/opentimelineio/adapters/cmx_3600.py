@@ -633,7 +633,7 @@ class ClipHandler:
                 self.record_tc_out
             ) = fields
             # Double check it is a cut
-            if edit_type not in ["C"]:
+            if edit_type != "C":
                 raise EDLParseError(
                     f"incorrect edit type {edit_type} in form statement: {line}"
                 )
