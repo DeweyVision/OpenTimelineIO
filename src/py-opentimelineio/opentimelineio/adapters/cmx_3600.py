@@ -1034,13 +1034,13 @@ class Event:
                 line.source_out = (
                     line.source_in + opentime.RationalTime(value, rate))
 
-        clip_with_timeline_framerate = copy.deepcopy(clip)
-        clip_with_timeline_framerate.source_range = opentime.TimeRange(
+
+        clip.source_range = opentime.TimeRange(
                 start_time=opentime.RationalTime(clip.source_range.start_time.value, rate=rate),
                 duration=opentime.RationalTime(clip.source_range.duration.value, rate=rate))
 
-        trimmed_range = clip_with_timeline_framerate.trimmed_range()
-        range_in_timeline = clip_with_timeline_framerate.transformed_time_range(
+        trimmed_range = clip.trimmed_range()
+        range_in_timeline = clip.transformed_time_range(
             trimmed_range,
             tracks
         )
