@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.18.2)
 # TODO: read this information from a configuration file, here, and in setup.py
 
 set(OTIO_VERSION_MAJOR "0")
-set(OTIO_VERSION_MINOR "16")
+set(OTIO_VERSION_MINOR "18")
 set(OTIO_VERSION_PATCH "0")
 set(OTIO_VERSION ${OTIO_VERSION_MAJOR}.${OTIO_VERSION_MINOR}.${OTIO_VERSION_PATCH})
 
@@ -16,7 +16,7 @@ set(OTIO_AUTHOR_EMAIL "otio-discussion@lists.aswf.io")
 set(OTIO_LICENSE      "Modified Apache 2.0 License")
 
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "")
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum OS X deployment version")
 
 project(OpenTimelineIO VERSION ${OTIO_VERSION} LANGUAGES C CXX)
 
@@ -28,7 +28,7 @@ project(OpenTimelineIO VERSION ${OTIO_VERSION} LANGUAGES C CXX)
 # Installation options
 option(OTIO_CXX_INSTALL               "Install the C++ bindings" ON)
 option(OTIO_PYTHON_INSTALL            "Install the Python bindings" OFF)
-option(OTIO_DEPENDENCIES_INSTALL      "Install OTIO's C++ header dependencies (any and nonstd)" ON)
+option(OTIO_DEPENDENCIES_INSTALL      "Install OTIO's C++ header dependencies (Imath)" ON)
 option(OTIO_INSTALL_PYTHON_MODULES    "Install OTIO pure Python modules/files" ON)
 option(OTIO_INSTALL_COMMANDLINE_TOOLS "Install the OTIO command line tools" ON)
 option(OTIO_INSTALL_CONTRIB           "Install the opentimelineio_contrib Python package" ON)
@@ -125,9 +125,9 @@ if(OTIO_CXX_INSTALL)
     message(STATUS "Installing C++ dynamic libraries to: ${OTIO_RESOLVED_CXX_DYLIB_INSTALL_DIR}")
 
     if(OTIO_DEPENDENCIES_INSTALL)
-        message(STATUS "  Installing 'any' and 'nonstd' for C++ (OTIO_DEPENDENCIES_INSTALL=ON)")
+        message(STATUS "  Installing header dependencies for C++ (OTIO_DEPENDENCIES_INSTALL=ON)")
     else()
-        message(STATUS "  Not installing any and nonstd for C++ (OTIO_DEPENDENCIES_INSTALL=OFF)")
+        message(STATUS "  Not installing header dependencies for C++ (OTIO_DEPENDENCIES_INSTALL=OFF)")
     endif()
 else()
     message(STATUS "Install C++ bindings: OFF")
@@ -150,7 +150,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(OTIO_CXX_COVERAGE AND NOT MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-update=atomic -fprofile-exclude-files='/usr/*;src/deps/*'")
     # this causes cmake to produce file.gcno instead of file.cpp.gcno
     set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE 1)
     message(STATUS "Building C++ with Coverage: ON")

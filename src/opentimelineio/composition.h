@@ -101,7 +101,7 @@ public:
         bool                shallow_search = false) const;
 
     // Return all objects within the given search_range.
-    std::vector<Retainer<Composable>> children_in_range(
+    virtual std::vector<Retainer<Composable>> children_in_range(
         TimeRange const& search_range,
         ErrorStatus*     error_status = nullptr) const;
 
@@ -143,9 +143,9 @@ private:
     int64_t _bisect_right(
         RationalTime const&                             tgt,
         std::function<RationalTime(Composable*)> const& key_func,
-        ErrorStatus*                                    error_status       = nullptr,
-        std::optional<int64_t>                          lower_search_bound = std::optional<int64_t>(0),
-        std::optional<int64_t>                          upper_search_bound = std::nullopt) const;
+        ErrorStatus*                                    error_status = nullptr,
+        std::optional<int64_t> lower_search_bound = std::optional<int64_t>(0),
+        std::optional<int64_t> upper_search_bound = std::nullopt) const;
 
     // Return the index of the last item in seq such that all e in seq[:index]
     // have key_func(e) < tgt, and all e in seq[index:] have key_func(e) >= tgt.
@@ -159,9 +159,9 @@ private:
     int64_t _bisect_left(
         RationalTime const&                             tgt,
         std::function<RationalTime(Composable*)> const& key_func,
-        ErrorStatus*                                    error_status       = nullptr,
-        std::optional<int64_t>                          lower_search_bound = std::optional<int64_t>(0),
-        std::optional<int64_t>                          upper_search_bound = std::nullopt) const;
+        ErrorStatus*                                    error_status = nullptr,
+        std::optional<int64_t> lower_search_bound = std::optional<int64_t>(0),
+        std::optional<int64_t> upper_search_bound = std::nullopt) const;
 
     std::vector<Retainer<Composable>> _children;
 

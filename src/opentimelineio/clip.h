@@ -23,11 +23,13 @@ public:
     using Parent = Item;
 
     Clip(
-        std::string const&              name                       = std::string(),
-        MediaReference*                 media_reference            = nullptr,
-        std::optional<TimeRange> const& source_range               = std::nullopt,
-        AnyDictionary const&            metadata                   = AnyDictionary(),
-        std::string const&              active_media_reference_key = default_media_key);
+        std::string const&              name            = std::string(),
+        MediaReference*                 media_reference = nullptr,
+        std::optional<TimeRange> const& source_range    = std::nullopt,
+        AnyDictionary const&            metadata        = AnyDictionary(),
+        std::vector<Effect*> const& effects             = std::vector<Effect*>(),
+        std::vector<Marker*> const& markers             = std::vector<Marker*>(),
+        std::string const& active_media_reference_key   = default_media_key);
 
     void            set_media_reference(MediaReference* media_reference);
     MediaReference* media_reference() const noexcept;

@@ -425,13 +425,20 @@ Contains a :class:`.MediaReference` and a trim on that media reference.
 )docstring")
         .def(py::init([](std::string name, MediaReference* media_reference,
                          std::optional<TimeRange> source_range, py::object metadata,
+                         std::optional<std::vector<Effect*>> effects,
+                         std::optional<std::vector<Marker*>> markers,
                          const std::string&  active_media_reference) {
-                          return new Clip(name, media_reference, source_range, py_to_any_dictionary(metadata), active_media_reference);
+                          return new Clip(name, media_reference, source_range, py_to_any_dictionary(metadata),
+                                          vector_or_default<Effect>(effects),
+                                          vector_or_default<Marker>(markers),
+                                          active_media_reference);
                       }),
              py::arg_v("name"_a = std::string()),
              "media_reference"_a = nullptr,
              "source_range"_a = std::nullopt,
              py::arg_v("metadata"_a = py::none()),
+             "effects"_a = py::none(),
+             "markers"_a = py::none(),
              "active_media_reference"_a = std::string(Clip::default_media_key))
         .def_property_readonly_static("DEFAULT_MEDIA_KEY",[](py::object /* self */) { 
             return Clip::default_media_key; 
@@ -526,9 +533,9 @@ Should be subclassed (for example by :class:`.Track` and :class:`.Stack`), not u
                 index = adjusted_vector_index(index, c->children());
                 c->remove_child(index, ErrorStatusHandler());
             }, "index"_a)
-        .def("__internal_insert", [](Composition* c, int index, Composable* composable) {
+        .def("__internal_insert", [](Composition* c, int index, Composable &composable) {
                 index = adjusted_vector_index(index, c->children());
-                c->insert_child(index, composable, ErrorStatusHandler());
+                c->insert_child(index, &composable, ErrorStatusHandler());
             }, "index"_a, "item"_a)
         .def("__contains__", &Composition::has_child, "composable"_a)
         .def("__len__", [](Composition* c) {
@@ -657,12 +664,15 @@ static void define_effects(py::module m) {
     py::class_<Effect, SOWithMetadata, managing_ptr<Effect>>(m, "Effect", py::dynamic_attr())
         .def(py::init([](std::string name,
                          std::string effect_name,
-                         py::object metadata) {
-                          return new Effect(name, effect_name, py_to_any_dictionary(metadata)); }),
+                         py::object metadata,
+                         py::bool_ enabled) {
+                          return new Effect(name, effect_name, py_to_any_dictionary(metadata), enabled); }),
              py::arg_v("name"_a = std::string()),
              "effect_name"_a = std::string(),
-             py::arg_v("metadata"_a = py::none()))
-        .def_property("effect_name", &Effect::effect_name, &Effect::set_effect_name);
+             py::arg_v("metadata"_a = py::none()),
+             "enabled"_a = true)
+        .def_property("effect_name", &Effect::effect_name, &Effect::set_effect_name)
+        .def_property("enabled", &Effect::enabled, &Effect::set_enabled, "If true, the Effect is applied. If false, the Effect is omitted.");
 
     py::class_<TimeEffect, Effect, managing_ptr<TimeEffect>>(m, "TimeEffect", py::dynamic_attr(), "Base class for all effects that alter the timing of an item.")
         .def(py::init([](std::string name,
