@@ -18,6 +18,18 @@
             "name" : "otiod",
             "filepath" : "otiod.py",
             "suffixes" : ["otiod"]
+        },
+        {
+          "OTIO_SCHEMA" : "Adapter.1",
+          "name" : "cmx_3600",
+          "filepath" : "cmx_3600.py",
+          "suffixes" : ["edl"]
+        },
+        {
+          "OTIO_SCHEMA": "Adapter.1",
+          "name": "fcp_xml",
+          "filepath": "fcp_xml.py",
+          "suffixes": ["xml"]
         }
     ],
     "hooks": {
