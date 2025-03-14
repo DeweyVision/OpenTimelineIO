@@ -70,8 +70,8 @@ RationalTime::nearest_valid_timecode_rate(double rate)
     return nearest_smpte_timecode_rate(rate);
 }
 
-double
-RationalTime::nearest_dropframe_timecode_rate(double rate)
+static double
+nearest_dropframe_timecode_rate(double rate)
 {
     double nearest_rate = 0;
     double min_diff     = std::numeric_limits<double>::max();
@@ -117,9 +117,9 @@ RationalTime::nearest_smpte_timecode_rate(double rate)
 static bool
 is_dropframe_rate(double rate)
 {
-    double nearest_smpte_rate = nearest_smpte_timecode_rate(fps);
-    double error_margin = nearest_smpte_rate * 0.002;
-    return (abs(nearest_smpte_rate - fps) < error_margin);
+    double nearest_dropframe_rate = nearest_dropframe_timecode_rate(rate);
+    double error_margin = nearest_dropframe_rate * 0.002;
+    return (abs(nearest_dropframe_rate - rate) < error_margin);
 }
 
 static bool
