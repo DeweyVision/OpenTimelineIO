@@ -59,7 +59,7 @@ bool
 RationalTime::is_smpte_timecode_rate(double fps)
 {
     double nearest_smpte_rate = nearest_smpte_timecode_rate(fps);
-    double error_margin = nearest_smpte_rate * 0.002;
+    double error_margin = nearest_smpte_rate * 0.0005;
     return (abs(nearest_smpte_rate - fps) < error_margin);
 }
 
@@ -495,7 +495,7 @@ RationalTime::to_timecode(
     // so as a convenience we will snap the rate to the nearest
     // SMPTE rate if it is close enough.
     double nearest_smpte_rate = nearest_smpte_timecode_rate(rate);
-    double error_margin = nearest_smpte_rate * 0.002;
+    double error_margin = nearest_smpte_rate * 0.0005;
     if (abs(nearest_smpte_rate - rate) > error_margin)
     {
         if (error_status)
