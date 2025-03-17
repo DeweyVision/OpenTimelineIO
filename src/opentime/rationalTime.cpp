@@ -118,7 +118,7 @@ static bool
 is_dropframe_rate(double rate)
 {
     double nearest_dropframe_rate = nearest_dropframe_timecode_rate(rate);
-    double error_margin = nearest_dropframe_rate * 0.002;
+    double error_margin = nearest_dropframe_rate * 0.0005;
     return (abs(nearest_dropframe_rate - rate) < error_margin);
 }
 
