@@ -58,8 +58,9 @@ RationalTime::is_valid_timecode_rate(double fps)
 bool
 RationalTime::is_smpte_timecode_rate(double fps)
 {
-    auto b = smpte_timecode_rates.begin(), e = smpte_timecode_rates.end();
-    return std::find(b, e, fps) != e;
+    double nearest_smpte_rate = nearest_smpte_timecode_rate(fps);
+    double error_margin = nearest_smpte_rate * 0.0005;
+    return (std::abs(nearest_smpte_rate - fps) < error_margin);
 }
 
 // deprecated in favor of `is_smpte_timecode_rate`
@@ -67,6 +68,28 @@ double
 RationalTime::nearest_valid_timecode_rate(double rate)
 {
     return nearest_smpte_timecode_rate(rate);
+}
+
+static double
+nearest_dropframe_timecode_rate(double rate)
+{
+    double nearest_rate = 0;
+    double min_diff     = std::numeric_limits<double>::max();
+    for (auto dropframe_rate: dropframe_timecode_rates)
+    {
+        if (dropframe_rate == rate)
+        {
+            return rate;
+        }
+        auto diff = std::abs(rate - dropframe_rate);
+        if (diff >= min_diff)
+        {
+            continue;
+        }
+        min_diff     = diff;
+        nearest_rate = dropframe_rate;
+    }
+    return nearest_rate;
 }
 
 double
@@ -94,9 +117,9 @@ RationalTime::nearest_smpte_timecode_rate(double rate)
 static bool
 is_dropframe_rate(double rate)
 {
-    auto b = dropframe_timecode_rates.begin(),
-         e = dropframe_timecode_rates.end();
-    return std::find(b, e, rate) != e;
+    double nearest_dropframe_rate = nearest_dropframe_timecode_rate(rate);
+    double error_margin = nearest_dropframe_rate * 0.0005;
+    return (std::abs(nearest_dropframe_rate - rate) < error_margin);
 }
 
 static bool
@@ -472,8 +495,8 @@ RationalTime::to_timecode(
     // so as a convenience we will snap the rate to the nearest
     // SMPTE rate if it is close enough.
     double nearest_smpte_rate = nearest_smpte_timecode_rate(rate);
-    double error_margin = nearest_smpte_rate * 0.002;
-    if (abs(nearest_smpte_rate - rate) > error_margin)
+    double error_margin = nearest_smpte_rate * 0.0005;
+    if (std::abs(nearest_smpte_rate - rate) > error_margin)
     {
         if (error_status)
         {
