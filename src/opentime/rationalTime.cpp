@@ -60,7 +60,7 @@ RationalTime::is_smpte_timecode_rate(double fps)
 {
     double nearest_smpte_rate = nearest_smpte_timecode_rate(fps);
     double error_margin = nearest_smpte_rate * 0.0005;
-    return (abs(nearest_smpte_rate - fps) < error_margin);
+    return (std::abs(nearest_smpte_rate - fps) < error_margin);
 }
 
 // deprecated in favor of `is_smpte_timecode_rate`
@@ -119,7 +119,7 @@ is_dropframe_rate(double rate)
 {
     double nearest_dropframe_rate = nearest_dropframe_timecode_rate(rate);
     double error_margin = nearest_dropframe_rate * 0.0005;
-    return (abs(nearest_dropframe_rate - rate) < error_margin);
+    return (std::abs(nearest_dropframe_rate - rate) < error_margin);
 }
 
 static bool
@@ -496,7 +496,7 @@ RationalTime::to_timecode(
     // SMPTE rate if it is close enough.
     double nearest_smpte_rate = nearest_smpte_timecode_rate(rate);
     double error_margin = nearest_smpte_rate * 0.0005;
-    if (abs(nearest_smpte_rate - rate) > error_margin)
+    if (std::abs(nearest_smpte_rate - rate) > error_margin)
     {
         if (error_status)
         {
