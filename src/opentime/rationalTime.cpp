@@ -498,15 +498,19 @@ RationalTime::to_timecode(
     double error_margin = nearest_smpte_rate * 0.0005;
     if (std::abs(nearest_smpte_rate - rate) > error_margin)
     {
-        if (error_status)
-        {
-            *error_status = ErrorStatus(ErrorStatus::INVALID_TIMECODE_RATE);
-        }
-        return std::string();
-    }
+        // Dewey - disabled error for non-SMPTE
 
-    // Let's assume this is the rate instead of the given rate.
-    rate = nearest_smpte_rate;
+        // if (error_status)
+        // {
+        //     *error_status = ErrorStatus(ErrorStatus::INVALID_TIMECODE_RATE);
+        // }
+        // return std::string();
+    }
+    else 
+    {
+        // Let's assume this is the rate instead of the given rate.
+        rate = nearest_smpte_rate;
+    }
 
     bool rate_is_dropframe = is_dropframe_rate(rate);
     if (drop_frame == IsDropFrameRate::ForceYes and not rate_is_dropframe)

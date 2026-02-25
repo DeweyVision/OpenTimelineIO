@@ -460,15 +460,15 @@ class TestTime(unittest.TestCase):
         with self.assertRaises(ValueError):
             otio.opentime.from_time_string("bogus", 24)
 
-    def test_invalid_rate_to_timecode_functions(self):
-        # Use a bogus rate, expecting `to_timecode` to complain
+    def test_non_smpte_rate_to_timecode_functions(self):
+        # Non-SMPTE rates should produce valid timecodes
         t = otio.opentime.RationalTime(100, 999)
 
-        with self.assertRaises(ValueError):
-            otio.opentime.to_timecode(t, 777)
+        tc1 = otio.opentime.to_timecode(t, 777)
+        self.assertEqual(tc1, "00:00:00:077")
 
-        with self.assertRaises(ValueError):
-            otio.opentime.to_timecode(t)
+        tc2 = otio.opentime.to_timecode(t)
+        self.assertEqual(tc2, "00:00:00:100")
 
     def test_time_string_24(self):
 
