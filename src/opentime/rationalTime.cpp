@@ -228,13 +228,26 @@ RationalTime::from_timecode(
     double             rate,
     ErrorStatus*       error_status)
 {
-    if (!RationalTime::is_smpte_timecode_rate(rate))
+    // It is common practice to use truncated or rounded values
+    // like 29.97 instead of exact SMPTE rates like 30000/1001
+    // so as a convenience we will snap the rate to the nearest
+    // SMPTE rate if it is close enough.
+    double nearest_smpte_rate = nearest_smpte_timecode_rate(rate);
+    double error_margin = nearest_smpte_rate * 0.0005;
+    if (std::abs(nearest_smpte_rate - rate) > error_margin)
     {
-        if (error_status)
-        {
-            *error_status = ErrorStatus{ ErrorStatus::INVALID_TIMECODE_RATE };
-        }
-        return RationalTime::_invalid_time;
+        // Dewey - disabled error for non-SMPTE
+
+        // if (error_status)
+        // {
+        //     *error_status = ErrorStatus(ErrorStatus::INVALID_TIMECODE_RATE);
+        // }
+        // return std::string();
+    }
+    else 
+    {
+        // Let's assume this is the rate instead of the given rate.
+        rate = nearest_smpte_rate;
     }
 
     bool rate_is_dropframe = is_dropframe_rate(rate);
@@ -361,13 +374,26 @@ RationalTime::from_time_string(
     double             rate,
     ErrorStatus*       error_status)
 {
-    if (!RationalTime::is_smpte_timecode_rate(rate))
+    // It is common practice to use truncated or rounded values
+    // like 29.97 instead of exact SMPTE rates like 30000/1001
+    // so as a convenience we will snap the rate to the nearest
+    // SMPTE rate if it is close enough.
+    double nearest_smpte_rate = nearest_smpte_timecode_rate(rate);
+    double error_margin = nearest_smpte_rate * 0.0005;
+    if (std::abs(nearest_smpte_rate - rate) > error_margin)
     {
-        set_error(
-            time_string,
-            ErrorStatus::INVALID_TIMECODE_RATE,
-            error_status);
-        return RationalTime::_invalid_time;
+        // Dewey - disabled error for non-SMPTE
+
+        // if (error_status)
+        // {
+        //     *error_status = ErrorStatus(ErrorStatus::INVALID_TIMECODE_RATE);
+        // }
+        // return std::string();
+    }
+    else 
+    {
+        // Let's assume this is the rate instead of the given rate.
+        rate = nearest_smpte_rate;
     }
 
     const char* start          = time_string.data();
